@@ -103,11 +103,12 @@
                 return;
             }
 
-            const timeSinceLastUnlock = elapsedSeconds % UNLOCK_INTERVAL;
-            const countdown = UNLOCK_INTERVAL - timeSinceLastUnlock;
+            const nextUnlockTime = DEPLOYMENT_TIMESTAMP + (unlockIndex + 1) * UNLOCK_INTERVAL * 1000;
+            const countdown = Math.max(0, Math.floor((nextUnlockTime - currentTime) / 1000));
             const hours = Math.floor(countdown / 3600);
             const minutes = Math.floor((countdown % 3600) / 60);
             const seconds = countdown % 60;
+
             countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${hours}h ${minutes}m ${seconds}s`;
         }
 

@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <div id="countdown">My Next Sweet Memory Will Show In: 0m 30s</div>
+    <div id="countdown">My Next Sweet Memory Will Show In: 0h 2m 0s</div>
     <div class="puzzle-container" id="puzzleContainer"></div>
     <button id="downloadButton" onclick="downloadImages()">Download Memories</button>
 
@@ -80,27 +80,17 @@
         const countdownDisplay = document.getElementById('countdown');
         const downloadButton = document.getElementById('downloadButton');
 
-        const UNLOCK_INTERVAL = 30; // 3 minutes in seconds
-        const unlockOrder = [4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11];
+        const UNLOCK_INTERVAL = 120; // 2 minutes in seconds
+        const unlockOrder = [8, 1, 5, 9, 2, 6, 10, 3, 7, 11];
         let unlockIndex = 0;
 
-        // Check for saved start time or set it
-        let startTime = localStorage.getItem('puzzleStartTime');
-        if (!startTime) {
-            startTime = new Date().getTime();
-            localStorage.setItem('puzzleStartTime', startTime);
-        } else {
-            startTime = parseInt(startTime);
-        }
+        const DEPLOYMENT_TIMESTAMP = new Date('2024-02-11T00:00:00Z').getTime();
 
         function updateCountdown() {
             const currentTime = new Date().getTime();
-            const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+            const elapsedSeconds = Math.floor((currentTime - DEPLOYMENT_TIMESTAMP) / 1000);
 
-            const totalUnlocks = Math.floor(elapsedSeconds / UNLOCK_INTERVAL);
-
-            // Unlock tiles based on elapsed time
-            while (unlockIndex < totalUnlocks && unlockIndex < unlockOrder.length) {
+            if (elapsedSeconds >= (unlockIndex + 1) * UNLOCK_INTERVAL && unlockIndex < unlockOrder.length) {
                 const nextTile = unlockOrder[unlockIndex];
                 document.querySelector(`.tile[data-index='${nextTile}']`).style.visibility = 'visible';
                 unlockIndex++;
@@ -113,8 +103,12 @@
                 return;
             }
 
-            const countdown = UNLOCK_INTERVAL - (elapsedSeconds % UNLOCK_INTERVAL);
-            countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${Math.floor(countdown / 60)}m ${countdown % 60}s`;
+            const timeSinceLastUnlock = elapsedSeconds % UNLOCK_INTERVAL;
+            const countdown = UNLOCK_INTERVAL - timeSinceLastUnlock;
+            const hours = Math.floor(countdown / 3600);
+            const minutes = Math.floor((countdown % 3600) / 60);
+            const seconds = countdown % 60;
+            countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${hours}h ${minutes}m ${seconds}s`;
         }
 
         const intervalId = setInterval(updateCountdown, 1000);
@@ -124,7 +118,8 @@
             tile.className = 'tile';
             tile.dataset.index = i;
 
-            if (i === 0) {
+            // Show tiles 0 and 4 initially
+            if (i === 0 || i === 4) {
                 tile.style.visibility = 'visible';
             }
 

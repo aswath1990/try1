@@ -86,11 +86,13 @@
 
         const DEPLOYMENT_TIMESTAMP = new Date('2024-02-11T00:00:00Z').getTime();
 
-        function updateCountdown() {
+        function unlockTiles() {
             const currentTime = new Date().getTime();
             const elapsedSeconds = Math.floor((currentTime - DEPLOYMENT_TIMESTAMP) / 1000);
 
-            if (elapsedSeconds >= (unlockIndex + 1) * UNLOCK_INTERVAL && unlockIndex < unlockOrder.length) {
+            const tilesToUnlock = Math.floor(elapsedSeconds / UNLOCK_INTERVAL);
+
+            while (unlockIndex < tilesToUnlock && unlockIndex < unlockOrder.length) {
                 const nextTile = unlockOrder[unlockIndex];
                 document.querySelector(`.tile[data-index='${nextTile}']`).style.visibility = 'visible';
                 unlockIndex++;
@@ -100,16 +102,23 @@
                 clearInterval(intervalId);
                 countdownDisplay.textContent = "All Memories Unlocked!";
                 downloadButton.style.display = 'block';
-                return;
             }
+        }
 
+        function updateCountdown() {
+            const currentTime = new Date().getTime();
             const nextUnlockTime = DEPLOYMENT_TIMESTAMP + (unlockIndex + 1) * UNLOCK_INTERVAL * 1000;
             const countdown = Math.max(0, Math.floor((nextUnlockTime - currentTime) / 1000));
+
             const hours = Math.floor(countdown / 3600);
             const minutes = Math.floor((countdown % 3600) / 60);
             const seconds = countdown % 60;
 
             countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${hours}h ${minutes}m ${seconds}s`;
+
+            if (countdown === 0) {
+                unlockTiles();
+            }
         }
 
         const intervalId = setInterval(updateCountdown, 1000);
@@ -119,7 +128,6 @@
             tile.className = 'tile';
             tile.dataset.index = i;
 
-            // Show tiles 0 and 4 initially
             if (i === 0 || i === 4) {
                 tile.style.visibility = 'visible';
             }
@@ -161,6 +169,8 @@
             link2.download = 'back.png';
             link2.click();
         }
+
+        unlockTiles();
     </script>
 </body>
 </html>

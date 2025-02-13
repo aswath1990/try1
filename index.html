@@ -138,11 +138,15 @@
             back.style.backgroundSize = `${cols * 100}px ${rows * 100}px`;
             back.style.backgroundPosition = `-${(i % cols) * 100}px -${Math.floor(i / cols) * 100}px`;
             
+            const audio = new Audio(`https://raw.githubusercontent.com/aswath1990/audio/main/tile${i}.mp3`);
+            audio.preload = 'auto';
+            
             flipCard.appendChild(front);
             flipCard.appendChild(back);
             tile.appendChild(flipCard);
             tile.addEventListener('click', () => {
                 tile.classList.toggle('flipped');
+                audio.play();
             });
             puzzleContainer.appendChild(tile);
         }

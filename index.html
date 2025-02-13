@@ -80,18 +80,18 @@
         const countdownDisplay = document.getElementById('countdown');
         const downloadButton = document.getElementById('downloadButton');
         
-        const unlockOrder = [7, 11]; // Unlock tile 7 first, then tile 11
+        const unlockOrder = [7, 11];
         let unlockIndex = 0;
         
         const pstTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-        const DEPLOYMENT_TIMESTAMP = new Date(pstTime).getTime(); // Reference current PST time
+        const DEPLOYMENT_TIMESTAMP = new Date(pstTime).getTime();
         
         function unlockNextTile() {
             if (unlockIndex < unlockOrder.length) {
                 document.querySelector(`.tile[data-index='${unlockOrder[unlockIndex]}']`).style.visibility = 'visible';
                 unlockIndex++;
                 if (unlockIndex < unlockOrder.length) {
-                    startCountdown(120); // Start another countdown for the next tile
+                    startCountdown(120);
                 } else {
                     countdownDisplay.textContent = "All Memories Unlocked!";
                     downloadButton.style.display = 'block';
@@ -141,10 +141,13 @@
             flipCard.appendChild(front);
             flipCard.appendChild(back);
             tile.appendChild(flipCard);
+            tile.addEventListener('click', () => {
+                tile.classList.toggle('flipped');
+            });
             puzzleContainer.appendChild(tile);
         }
         
-        startCountdown(120); // Start the countdown for the first tile unlock
+        startCountdown(120);
         
         function downloadImages() {
             const link1 = document.createElement('a');

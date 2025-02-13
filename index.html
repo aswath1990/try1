@@ -1,144 +1,162 @@
-const rows = 3;
-const cols = 4;
-const frontImage = 'front.png';
-const backImage = 'back.png';
-const puzzleContainer = document.getElementById('puzzleContainer');
-const countdownDisplay = document.getElementById('countdown');
-const downloadButton = document.getElementById('downloadButton');
-
-const UNLOCK_INTERVAL = 900; // 15 minutes in seconds
-const unlockOrder = [3, 7, 11]; // Unlock order of tiles
-let unlockIndex = 0;
-
-// ✅ Fix: Get accurate PST time in milliseconds
-function getPSTTimeInMs() {
-    const now = new Date();
-    const pstDate = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Los_Angeles",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
-    }).format(now);
-
-    const [month, day, year, hour, minute, second] = pstDate.match(/\d+/g);
-    return Date.UTC(year, month - 1, day, hour, minute, second); // Convert to milliseconds
-}
-
-// ✅ Fix: Store and retrieve timestamp correctly
-let DEPLOYMENT_TIMESTAMP = localStorage.getItem('DEPLOYMENT_TIMESTAMP');
-if (!DEPLOYMENT_TIMESTAMP || isNaN(DEPLOYMENT_TIMESTAMP)) {
-    DEPLOYMENT_TIMESTAMP = getPSTTimeInMs();
-    localStorage.setItem('DEPLOYMENT_TIMESTAMP', DEPLOYMENT_TIMESTAMP);
-} else {
-    DEPLOYMENT_TIMESTAMP = parseInt(DEPLOYMENT_TIMESTAMP, 10);
-}
-
-// ✅ Fix: Unlock multiple tiles correctly
-function unlockNextTile() {
-    const elapsedSeconds = Math.floor((getPSTTimeInMs() - DEPLOYMENT_TIMESTAMP) / 1000);
-    unlockIndex = Math.floor(elapsedSeconds / UNLOCK_INTERVAL);
-
-    for (let i = 0; i <= unlockIndex && i < unlockOrder.length; i++) {
-        const nextTile = unlockOrder[i];
-        const tileElement = document.querySelector(`.tile[data-index='${nextTile}']`);
-        if (tileElement) tileElement.style.visibility = 'visible';
-    }
-
-    if (unlockIndex >= unlockOrder.length) {
-        clearInterval(intervalId);
-        countdownDisplay.textContent = "All Memories Unlocked!";
-        downloadButton.style.display = 'block';
-    }
-}
-
-// ✅ Fix: Correct countdown logic
-function updateCountdown() {
-    const currentTime = getPSTTimeInMs();
-    const nextUnlockTime = DEPLOYMENT_TIMESTAMP + (unlockIndex + 1) * UNLOCK_INTERVAL * 1000;
-    const countdown = Math.max(0, Math.floor((nextUnlockTime - currentTime) / 1000));
-
-    const minutes = Math.floor(countdown / 60);
-    const seconds = countdown % 60;
-
-    countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${minutes}m ${seconds}s`;
-
-    if (countdown <= 0) {
-        unlockNextTile();
-    }
-}
-
-// ✅ Fix: Ensure countdown updates properly
-const intervalId = setInterval(updateCountdown, 1000);
-
-for (let i = 0; i < rows * cols; i++) {
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-    tile.dataset.index = i;
-
-    if ([0, 1, 2, 4, 5, 6, 8, 9, 10].includes(i)) {
-        tile.style.visibility = 'visible';
-    }
-
-    const flipCard = document.createElement('div');
-    flipCard.className = 'flip-card';
-
-    const front = document.createElement('div');
-    front.className = 'front';
-    front.style.backgroundImage = `url(${frontImage})`;
-    front.style.backgroundSize = `${cols * 100}px ${rows * 100}px`;
-    front.style.backgroundPosition = `-${(i % cols) * 100}px -${Math.floor(i / cols) * 100}px`;
-
-    const back = document.createElement('div');
-    back.className = 'back';
-    back.style.backgroundImage = `url(${backImage})`;
-    back.style.backgroundSize = `${cols * 100}px ${rows * 100}px`;
-    back.style.backgroundPosition = `-${(i % cols) * 100}px -${Math.floor(i / cols) * 100}px`;
-
-    flipCard.appendChild(front);
-    flipCard.appendChild(back);
-    tile.appendChild(flipCard);
-
-    const audio = new Audio(`https://raw.githubusercontent.com/aswath1990/audio/main/tile${i}.mp3`);
-    audio.preload = 'auto';
-
-    audio.addEventListener('error', () => {
-        console.error(`Audio file for tile${i}.mp3 not found.`);
-    });
-
-    tile.addEventListener('click', () => {
-        tile.classList.toggle('flipped');
-
-        if (currentAudio && currentAudio !== audio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3x4 Puzzle Flip</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
         }
-
-        if (currentAudio !== audio || audio.paused) {
-            audio.play();
+        .puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 0;
+            border: none;
         }
+        .tile {
+            width: 100px;
+            height: 100px;
+            perspective: 1000px;
+            position: relative;
+            visibility: hidden;
+        }
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .tile.flipped .flip-card {
+            transform: rotateY(180deg);
+        }
+        .front, .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border: none;
+            margin: 0;
+        }
+        .back {
+            transform: rotateY(180deg);
+        }
+        #countdown {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        #downloadButton {
+            display: none;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="countdown">My Next Sweet Memory Will Show In: 2m 0s</div>
+    <div class="puzzle-container" id="puzzleContainer"></div>
+    <button id="downloadButton" onclick="downloadImages()">Download Memories</button>
 
-        currentAudio = audio;
-    });
+    <script>
+        const rows = 3;
+        const cols = 4;
+        const frontImage = 'front.png';
+        const backImage = 'back.png';
+        const puzzleContainer = document.getElementById('puzzleContainer');
+        const countdownDisplay = document.getElementById('countdown');
+        const downloadButton = document.getElementById('downloadButton');
+        
+        const unlockOrder = [7, 11]; // Unlock tile 7 first, then tile 11
+        let unlockIndex = 0;
+        
+        const pstTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        const DEPLOYMENT_TIMESTAMP = new Date(pstTime).getTime(); // Reference current PST time
+        
+        function unlockNextTile() {
+            if (unlockIndex < unlockOrder.length) {
+                document.querySelector(`.tile[data-index='${unlockOrder[unlockIndex]}']`).style.visibility = 'visible';
+                unlockIndex++;
+                if (unlockIndex < unlockOrder.length) {
+                    startCountdown(120); // Start another countdown for the next tile
+                } else {
+                    countdownDisplay.textContent = "All Memories Unlocked!";
+                    downloadButton.style.display = 'block';
+                }
+            }
+        }
+        
+        function startCountdown(seconds) {
+            let remaining = seconds;
+            const interval = setInterval(() => {
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${minutes}m ${seconds}s`;
+                
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    unlockNextTile();
+                }
+                remaining--;
+            }, 1000);
+        }
+        
+        for (let i = 0; i < rows * cols; i++) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.dataset.index = i;
+            
+            if (![7, 11].includes(i)) {
+                tile.style.visibility = 'visible';
+            }
+            
+            const flipCard = document.createElement('div');
+            flipCard.className = 'flip-card';
+            
+            const front = document.createElement('div');
+            front.className = 'front';
+            front.style.backgroundImage = `url(${frontImage})`;
+            front.style.backgroundSize = `${cols * 100}px ${rows * 100}px`;
+            front.style.backgroundPosition = `-${(i % cols) * 100}px -${Math.floor(i / cols) * 100}px`;
+            
+            const back = document.createElement('div');
+            back.className = 'back';
+            back.style.backgroundImage = `url(${backImage})`;
+            back.style.backgroundSize = `${cols * 100}px ${rows * 100}px`;
+            back.style.backgroundPosition = `-${(i % cols) * 100}px -${Math.floor(i / cols) * 100}px`;
+            
+            flipCard.appendChild(front);
+            flipCard.appendChild(back);
+            tile.appendChild(flipCard);
+            puzzleContainer.appendChild(tile);
+        }
+        
+        startCountdown(120); // Start the countdown for the first tile unlock
+        
+        function downloadImages() {
+            const link1 = document.createElement('a');
+            link1.href = frontImage;
+            link1.download = 'front.png';
+            link1.click();
 
-    puzzleContainer.appendChild(tile);
-}
-
-// ✅ Fix: Correct image download function
-function downloadImages() {
-    const link1 = document.createElement('a');
-    link1.href = frontImage;
-    link1.download = 'front.png';
-    link1.click();
-
-    const link2 = document.createElement('a');
-    link2.href = backImage;
-    link2.download = 'back.png';
-    link2.click();
-}
-
-// ✅ Call unlock function on page load
-unlockNextTile();
+            const link2 = document.createElement('a');
+            link2.href = backImage;
+            link2.download = 'back.png';
+            link2.click();
+        }
+    </script>
+</body>
+</html>

@@ -10,14 +10,22 @@ const UNLOCK_INTERVAL = 900; // 15 minutes in seconds
 const unlockOrder = [3, 7, 11]; // Unlock order of tiles
 let unlockIndex = 0;
 
-// ✅ Fix: Get accurate PST time
-function getPSTTimestamp() {
-    return new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-}
-
-// ✅ Fix: Convert to valid timestamp
+// ✅ Fix: Get accurate PST time in milliseconds
 function getPSTTimeInMs() {
-    return new Date(getPSTTimestamp()).getTime();
+    const now = new Date();
+    const pstDate = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Los_Angeles",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    }).format(now);
+
+    const [month, day, year, hour, minute, second] = pstDate.match(/\d+/g);
+    return Date.UTC(year, month - 1, day, hour, minute, second); // Convert to milliseconds
 }
 
 // ✅ Fix: Store and retrieve timestamp correctly

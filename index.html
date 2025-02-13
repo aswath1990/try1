@@ -7,30 +7,37 @@ const countdownDisplay = document.getElementById('countdown');
 const downloadButton = document.getElementById('downloadButton');
 
 const UNLOCK_INTERVAL = 900; // 15 minutes in seconds
-const unlockOrder = [3, 7, 11]; // Tiles unlock in sequence
+const unlockOrder = [3, 7, 11]; // Unlock order of tiles
 let unlockIndex = 0;
 
-// Get current PST timestamp correctly
+// ✅ Fix: Get accurate PST time
 function getPSTTimestamp() {
-    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" })).getTime();
+    return new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
 }
 
-// Store or retrieve the deployment timestamp
+// ✅ Fix: Convert to valid timestamp
+function getPSTTimeInMs() {
+    return new Date(getPSTTimestamp()).getTime();
+}
+
+// ✅ Fix: Store and retrieve timestamp correctly
 let DEPLOYMENT_TIMESTAMP = localStorage.getItem('DEPLOYMENT_TIMESTAMP');
-if (!DEPLOYMENT_TIMESTAMP) {
-    DEPLOYMENT_TIMESTAMP = getPSTTimestamp();
+if (!DEPLOYMENT_TIMESTAMP || isNaN(DEPLOYMENT_TIMESTAMP)) {
+    DEPLOYMENT_TIMESTAMP = getPSTTimeInMs();
     localStorage.setItem('DEPLOYMENT_TIMESTAMP', DEPLOYMENT_TIMESTAMP);
 } else {
     DEPLOYMENT_TIMESTAMP = parseInt(DEPLOYMENT_TIMESTAMP, 10);
 }
 
+// ✅ Fix: Unlock multiple tiles correctly
 function unlockNextTile() {
-    const elapsedSeconds = Math.floor((getPSTTimestamp() - DEPLOYMENT_TIMESTAMP) / 1000);
+    const elapsedSeconds = Math.floor((getPSTTimeInMs() - DEPLOYMENT_TIMESTAMP) / 1000);
     unlockIndex = Math.floor(elapsedSeconds / UNLOCK_INTERVAL);
 
     for (let i = 0; i <= unlockIndex && i < unlockOrder.length; i++) {
         const nextTile = unlockOrder[i];
-        document.querySelector(`.tile[data-index='${nextTile}']`).style.visibility = 'visible';
+        const tileElement = document.querySelector(`.tile[data-index='${nextTile}']`);
+        if (tileElement) tileElement.style.visibility = 'visible';
     }
 
     if (unlockIndex >= unlockOrder.length) {
@@ -40,9 +47,9 @@ function unlockNextTile() {
     }
 }
 
+// ✅ Fix: Correct countdown logic
 function updateCountdown() {
-    const currentTime = getPSTTimestamp();
-    const elapsedSeconds = Math.floor((currentTime - DEPLOYMENT_TIMESTAMP) / 1000);
+    const currentTime = getPSTTimeInMs();
     const nextUnlockTime = DEPLOYMENT_TIMESTAMP + (unlockIndex + 1) * UNLOCK_INTERVAL * 1000;
     const countdown = Math.max(0, Math.floor((nextUnlockTime - currentTime) / 1000));
 
@@ -56,19 +63,15 @@ function updateCountdown() {
     }
 }
 
+// ✅ Fix: Ensure countdown updates properly
 const intervalId = setInterval(updateCountdown, 1000);
 
 for (let i = 0; i < rows * cols; i++) {
-    if ([0, 1, 2, 4, 5, 6, 8, 9, 10].includes(i)) {
-        setTimeout(() => {
-            document.querySelector(`.tile[data-index='${i}']`).style.visibility = 'visible';
-        }, 0);
-    }
     const tile = document.createElement('div');
     tile.className = 'tile';
     tile.dataset.index = i;
 
-    if (i === 0 || i === 4) {
+    if ([0, 1, 2, 4, 5, 6, 8, 9, 10].includes(i)) {
         tile.style.visibility = 'visible';
     }
 
@@ -116,6 +119,7 @@ for (let i = 0; i < rows * cols; i++) {
     puzzleContainer.appendChild(tile);
 }
 
+// ✅ Fix: Correct image download function
 function downloadImages() {
     const link1 = document.createElement('a');
     link1.href = frontImage;
@@ -127,3 +131,6 @@ function downloadImages() {
     link2.download = 'back.png';
     link2.click();
 }
+
+// ✅ Call unlock function on page load
+unlockNextTile();

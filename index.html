@@ -26,7 +26,7 @@
             height: 100px;
             perspective: 1000px;
             position: relative;
-            visibility: hidden;
+            visibility: visible;
         }
         .flip-card {
             width: 100%;
@@ -55,7 +55,7 @@
             font-weight: bold;
         }
         #downloadButton {
-            display: none;
+            display: block;
             padding: 10px 20px;
             background-color: #007BFF;
             color: white;
@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <div id="countdown">My Next Sweet Memory Will Show In: 2m 0s</div>
+    <div id="countdown">All Memories Unlocked!</div>
     <div class="puzzle-container" id="puzzleContainer"></div>
     <button id="downloadButton" onclick="downloadImages()">Download Memories</button>
 
@@ -77,51 +77,11 @@
         const frontImage = 'front.png';
         const backImage = 'back.png';
         const puzzleContainer = document.getElementById('puzzleContainer');
-        const countdownDisplay = document.getElementById('countdown');
-        const downloadButton = document.getElementById('downloadButton');
-        
-        const unlockOrder = [7, 11];
-        let unlockIndex = 0;
-        
-        const pstTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-        const DEPLOYMENT_TIMESTAMP = new Date(pstTime).getTime();
-        
-        function unlockNextTile() {
-            if (unlockIndex < unlockOrder.length) {
-                document.querySelector(`.tile[data-index='${unlockOrder[unlockIndex]}']`).style.visibility = 'visible';
-                unlockIndex++;
-                if (unlockIndex < unlockOrder.length) {
-                    startCountdown(120);
-                } else {
-                    countdownDisplay.textContent = "All Memories Unlocked!";
-                    downloadButton.style.display = 'block';
-                }
-            }
-        }
-        
-        function startCountdown(seconds) {
-            let remaining = seconds;
-            const interval = setInterval(() => {
-                const minutes = Math.floor(remaining / 60);
-                const seconds = remaining % 60;
-                countdownDisplay.textContent = `My Next Sweet Memory Will Show In: ${minutes}m ${seconds}s`;
-                
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    unlockNextTile();
-                }
-                remaining--;
-            }, 1000);
-        }
         
         for (let i = 0; i < rows * cols; i++) {
             const tile = document.createElement('div');
             tile.className = 'tile';
             tile.dataset.index = i;
-            
-            if (![7, 11].includes(i)) {
-                tile.style.visibility = 'visible';
-            }
             
             const flipCard = document.createElement('div');
             flipCard.className = 'flip-card';
@@ -150,8 +110,6 @@
             });
             puzzleContainer.appendChild(tile);
         }
-        
-        startCountdown(120);
         
         function downloadImages() {
             const link1 = document.createElement('a');
